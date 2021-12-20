@@ -11,24 +11,22 @@ using namespace std;
 typedef string vertex;
 typedef vector<vertex> edge_list;
 typedef shared_ptr<vector<vertex>> edges_ptr;
-typedef unordered_map<vertex, edges_ptr> connections;
+typedef map<vertex, edges_ptr> connections;
 typedef unordered_set<vertex> vertex_set;
 
-void add_connections(string& line,
-                     connections& cave_map,
-                     unordered_set<vertex>& s_caves);
+string taken_by = "";
+
+void add_connections(string& line, connections& cave_map, vertex_set& s_caves);
 
 void print_map(connections& cave_map);
 
-int get_all_paths(connections& cave_map,
-                  const vertex& start,
-                  vertex_set visited,
-                  int& total_paths,
-                  vertex small_cave,
-                  string path);
+int get_all_paths(connections& cave_map, const vertex& start,
+                  vertex_set visited, int& total_paths,
+                  bool second_visit_avail, string path);
 
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
     string file_name = "cave_input.txt";
     ifstream in_file(file_name);
 
@@ -45,7 +43,10 @@ int main(int argc, char* argv[]) {
         add_connections(line, cave_map, small_caves);
     }
 
+    cout << "Cave Map:\n";
+    cout << "--------------------------------------------------------\n";
     print_map(cave_map);
+    cout << "--------------------------------------------------------\n";
     cout << "Small caves: ";
     for (vertex c : small_caves) {
         cout << c << ", ";
@@ -55,25 +56,14 @@ int main(int argc, char* argv[]) {
     int total_paths = 0;
     vertex v_empy = "";
     string path = "";
-    int no_repeat = get_all_paths(cave_map, "start", {}, total_paths, v_empy, path);
-
-    int second_visits = no_repeat;
-    for (vertex cave : small_caves) {
-        cout << "visiting " << cave << " twice.\n";
-        path = "";
-        total_paths = 0;
-        int tmp = get_all_paths(cave_map, "start", {}, total_paths, cave, path);
-        cout << "Total here: " << tmp << endl;
-        second_visits += tmp - no_repeat;
-    }
-    vertex small_v = "b";
+    vertex_set visited = {"start"}; // mark start visited so we don't come back
+    int no_repeat = get_all_paths(cave_map, "start", visited,
+                                  total_paths, true, path);
     
-    cout << "Total Paths: " << second_visits << endl;
+    cout << "Total Paths: " << total_paths << endl;
 }
 
-void add_connections(string& line,
-                     connections& cave_map,
-                     unordered_set<vertex>& s_caves)
+void add_connections(string& line, connections& cave_map, vertex_set& s_caves)
 {
     size_t separator_pos = line.find('-');
     vertex v1 = line.substr(0, separator_pos);
@@ -97,7 +87,39 @@ void add_connections(string& line,
     if (islower(v2[0]) && v2 != "start" && v2 != "end") s_caves.insert(v2);
 }
 
-void print_map(connections& cave_map) {
+// visited set is passed by copy because we need a local copy per stack call
+// in order to get all possible paths.
+int get_all_paths(connections& cave_map, const vertex& start,
+                  vertex_set visited, int& total_paths,
+                  bool second_visit_avail, string path)
+{
+    path += "->" + start;
+    if (start == "end") {
+        total_paths++;
+        // cout << path <<'\n';
+        return total_paths;
+    }
+
+    if (islower(start[0])) { // lower case can only be visited once
+        visited.insert(start);
+    }
+
+    edges_ptr cur_edges_ptr = cave_map[start];
+    for (vertex v : *cur_edges_ptr) {
+        if (visited.find(v) == visited.end()) { // not visited
+            get_all_paths(cave_map, v, visited, total_paths,
+                          second_visit_avail, path);
+        } else if (v != "start" && second_visit_avail) {
+            get_all_paths(cave_map, v, visited, total_paths,
+                          false, path);
+        }
+    }
+
+    return total_paths;
+}
+
+void print_map(connections& cave_map)
+{
     for (auto it = cave_map.begin(); it != cave_map.end(); it++) {
         cout << it->first << " -> ";
         auto e_it = it->second->begin();
@@ -107,38 +129,4 @@ void print_map(connections& cave_map) {
         }
         cout << "]\n";
     }
-}
-
-// visited set is passed by copy because we need a local copy per stack call
-// in order to get all possible paths.
-int get_all_paths(connections& cave_map,
-                  const vertex& start,
-                  vertex_set visited,
-                  int& total_paths,
-                  vertex small_cave,
-                  string path)
-{
-    path += "->" + start;
-    if (start == "end") {
-        total_paths++;
-        // cout << path << '\n';
-        return total_paths;
-    }
-
-    if (islower(start[0])) { // lower case can only be visited once
-        if (start == small_cave) { // second visit
-            small_cave = "";
-        } else {
-            visited.insert(start);
-        }
-    }
-
-    edges_ptr cur_edges_ptr = cave_map[start];
-    for (vertex v : *cur_edges_ptr) {
-        if (visited.find(v) == visited.end()) { // not visited
-            get_all_paths(cave_map, v, visited, total_paths, small_cave, path);
-        }
-    }
-
-    return total_paths;
 }

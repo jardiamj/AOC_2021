@@ -15,7 +15,7 @@ Origami::Origami(std::ifstream& input_file) : instructions{} {
         }
 
         std::istringstream iss(line);
-        iss >> x; iss >> separator; iss >> y;
+        iss >> x >> separator >> y;
         point_list.push_back(std::pair<int, int>(x, y));
 
         if (x > max_x) max_x = x;

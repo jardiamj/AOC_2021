@@ -50,6 +50,7 @@
         "cstring": "cpp",
         "map": "cpp",
         "set": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "unordered_set": "cpp"
     }
 }

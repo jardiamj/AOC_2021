@@ -6,6 +6,9 @@
 #include <limits>
 #include <memory>
 
+// TODO: use multiset instead of a priority queue so we can remove and
+// reinsert a vertex (Cell) whenever we update its risk
+
 using namespace std;
 
 int delta[4][2] = {{-1, 0}, // Up
